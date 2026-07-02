@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tyrol — Mój prywatny przewodnik dla Ciebie</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --forest: #2d5016;
+            --lake: #3a8fa4;
+            --stone: #6b6b6b;
+            --cream: #f8f5f0;
+            --warm: #b8934a;
+            --dark: #1a1a2e;
+            --text: #2c2c2c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--cream);
+            color: var(--text);
+        }
+
+        /* ─── HERO ─── */
+        .hero {
+            position: relative;
+            min-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 40px 100px;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('photos/tyrol.jpeg');
+            background-size: cover;
+            background-position: center 45%;
+            filter: brightness(0.82) contrast(1.2) saturate(1.15);
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom,
+                rgba(5,15,20,0.45) 0%,
+                rgba(5,15,20,0.30) 40%,
+                rgba(5,15,20,0.80) 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 740px;
+        }
+
+        .hero-eyebrow {
+            font-size: 11px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 22px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .hero h1 {
+            font-size: 62px;
+            font-weight: 300;
+            letter-spacing: -2px;
+            line-height: 1.0;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: #b0e0c8;
+        }
+
+        .hero-personal {
+            font-size: 17px;
+            color: rgba(255,255,255,0.78);
+            line-height: 1.75;
+            max-width: 600px;
+            margin: 0 auto 44px;
+            font-family: 'Georgia', serif;
+        }
+
+        .hero-pills {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            background: rgba(255,255,255,0.11);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 20px;
+            padding: 7px 18px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.78);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(6px);
+        }
+
+        .hero-scroll {
+            position: absolute;
+            bottom: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            color: rgba(255,255,255,0.35);
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            animation: bob 2.2s ease-in-out infinite;
+        }
+        @keyframes bob {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%       { transform: translateX(-50%) translateY(7px); }
+        }
+
+        /* ─── NAV ─── */
+        .nav {
+            background: white;
+            border-bottom: 1px solid #e8e2d9;
+            padding: 0 32px;
+            display: flex;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            overflow-x: auto;
+            scrollbar-width: none;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        .nav::-webkit-scrollbar { display: none; }
+
+        .nav a {
+            display: block;
+            padding: 15px 15px;
+            text-decoration: none;
+            color: #bbb;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            transition: all 0.2s;
+        }
+        .nav a:hover { color: var(--forest); border-bottom-color: var(--forest); }
+        .nav a.event-link { color: #c8a020; }
+        .nav a.event-link:hover { color: #e8c030; border-bottom-color: #e8c030; }
+
+        /* ─── WRAPPERS ─── */
+        .wrap-white  { background: white; }
+        .wrap-cream  { background: #f0ede8; }
+        .wrap-dark   { background: #1a271a; }
+        .wrap-event  { background: linear-gradient(135deg, #131f13 0%, #0d1a28 100%); }
+
+        .section {
+            padding: 68px 40px;
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--warm);
+            margin-bottom: 10px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 300;
+            color: var(--dark);
+            margin-bottom: 12px;
+        }
+
+        .section-lead {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 40px;
+            line-height: 1.65;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            max-width: 640px;
+        }
+
+        /* ─── EVENTS ─── */
+        .events-section { padding: 60px 40px; }
+        .events-inner { max-width: 1120px; margin: 0 auto; }
+        .events-header { margin-bottom: 30px; }
+        .events-header .eyebrow { color: #e8b820; }
+        .events-header .section-title { color: white; margin-bottom: 8px; }
+        .events-header p { font-size: 13px; color: rgba(255,255,255,0.4); font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .event-card {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 14px;
+            padding: 22px;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .event-card:hover { background: rgba(255,255,255,0.085); }
+        .event-card.star { border-color: rgba(232,184,32,0.35); background: rgba(232,184,32,0.05); }
+        .event-card.dim  { opacity: 0.5; }
+
+        .event-date {
+            display: inline-block;
+            background: rgba(232,184,32,0.12);
+            color: #e8b820;
+            border-radius: 7px;
+            padding: 4px 11px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin-bottom: 13px;
+            width: fit-content;
+        }
+
+        .event-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        .event-venue {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 11px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .event-desc {
+            font-size: 12.5px;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.62;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            flex: 1;
+        }
+
+        .event-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .event-badge {
+            font-size: 10px;
+            color: #72cc72;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .event-link-btn {
+            display: inline-block;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.65);
+            border-radius: 7px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .event-link-btn:hover { background: rgba(255,255,255,0.14); }
+
+        .events-note {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.3);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .events-note a { color: rgba(255,255,255,0.5); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); }
+
+        /* ─── EXPERIENCE CARDS ─── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 22px;
+        }
+
+        .xcard {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 3px 20px rgba(0,0,0,0.07);
+            transition: transform 0.22s, box-shadow 0.22s;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .xcard:hover { transform: translateY(-4px); box-shadow: 0 14px 44px rgba(0,0,0,0.12); }
+
+        .xcard-img {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+            display: block;
+            background: #e0dcd4;
+        }
+
+        .xcard-body { padding: 20px 22px 22px; }
+
+        .xcard-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+
+        .xcard-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; flex-shrink: 0;
+        }
+        .xcard-icon.lake  { background: #dff0f8; }
+        .xcard-icon.mtn   { background: #dff0de; }
+        .xcard-icon.town  { background: #fff0dc; }
+        .xcard-icon.gorge { background: #f0e8f8; }
+
+        .xcard-name { font-size: 17px; font-weight: 600; color: var(--dark); }
+        .xcard-sub  { font-size: 10px; color: #bbb; letter-spacing: 1.5px; text-transform: uppercase;
+                      font-family: 'Helvetica Neue', Arial, sans-serif; margin-top: 2px; }
+
+        .xcard-text {
+            font-size: 13px; line-height: 1.68; color: #666;
+            font-family: 'Helvetica Neue', Arial, sans-serif; margin-bottom: 13px;
+        }
+
+        .xcard-link {
+            display: inline-block;
+            font-size: 11px;
+            color: var(--forest);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(45,80,22,0.25);
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .xcard-link:hover { border-color: var(--forest); }
+
+        .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag {
+            background: #f2eee8; border-radius: 9px;
+            padding: 3px 9px; font-size: 11px; color: #999;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* ─── MAP ─── */
+        .map-section { padding: 56px 40px; }
+        .map-inner { max-width: 1120px; margin: 0 auto; }
+        .map-header { margin-bottom: 22px; }
+        .map-header .eyebrow { color: #7aaa7a; }
+        .map-header .section-title { color: white; margin-bottom: 6px; }
+        .map-header p { font-size: 12px; color: rgba(255,255,255,0.38); font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        #map {
+            height: 540px;
+            border-radius: 14px;
+            box-shadow: 0 28px 72px rgba(0,0,0,0.38);
+            overflow: hidden;
+        }
+
+        .map-legend { display: flex; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 7px; font-size: 20px;
+                       color: rgba(255,255,255,0.38); font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); }
+
+        /* ─── ITINERARY ─── */
+        .days { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+
+        .day-card {
+            background: white; border-radius: 16px;
+            padding: 34px; box-shadow: 0 4px 22px rgba(0,0,0,0.07);
+        }
+
+        .day-label {
+            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+            color: var(--warm); margin-bottom: 7px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .day-title {
+            font-size: 21px; font-weight: 400; color: var(--dark);
+            margin-bottom: 26px; padding-bottom: 20px;
+            border-bottom: 1px solid #f0ede8;
+        }
+
+        .step { display: flex; gap: 16px; margin-bottom: 18px; }
+        .step:last-of-type { margin-bottom: 0; }
+
+        .step-time {
+            min-width: 66px; font-size: 9.5px; color: var(--warm);
+            font-weight: 700; letter-spacing: 1px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-transform: uppercase; padding-top: 3px; flex-shrink: 0;
+        }
+
+        .step h4 { font-size: 14px; font-weight: 700; color: var(--dark);
+                   margin-bottom: 4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        .step p { font-size: 12.5px; color: #888; line-height: 1.62;
+                  font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        .step a { color: var(--forest); text-decoration: none; border-bottom: 1px solid rgba(45,80,22,0.2); }
+        .step a:hover { border-color: var(--forest); }
+
+        .alt-box {
+            background: #f2f7f2; border-left: 3px solid #78b878;
+            border-radius: 0 10px 10px 0; padding: 14px 16px; margin-top: 20px;
+        }
+        .alt-box h5 {
+            font-size: 10px; color: var(--forest); letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 7px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        .alt-box p { font-size: 12.5px; color: #777; line-height: 1.6;
+                     font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .alt-box a { color: var(--forest); text-decoration: none; border-bottom: 1px solid rgba(45,80,22,0.2); }
+
+        /* ─── STAYS ─── */
+        .stays-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 20px;
+        }
+
+        .stay-card {
+            background: white; border-radius: 14px; overflow: hidden;
+            box-shadow: 0 3px 20px rgba(0,0,0,0.07);
+            transition: transform 0.2s;
+        }
+        .stay-card:hover { transform: translateY(-3px); }
+
+        .stay-stripe { height: 5px; background: var(--forest); }
+        .stay-stripe.gold { background: var(--warm); }
+        .stay-stripe.blue { background: var(--lake); }
+        .stay-stripe.plum { background: #8e44ad; }
+
+        .stay-body { padding: 24px; }
+        .stay-night { font-size: 9.5px; color: var(--warm); letter-spacing: 3px;
+                      text-transform: uppercase; margin-bottom: 5px;
+                      font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .stay-name { font-size: 18px; font-weight: 600; color: var(--dark); margin-bottom: 3px; }
+        .stay-location { font-size: 10px; color: #ccc; letter-spacing: 2px; text-transform: uppercase;
+                         margin-bottom: 12px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .stay-desc { font-size: 13px; line-height: 1.68; color: #666;
+                     margin-bottom: 15px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .stay-link { display: inline-block; font-size: 11px; color: var(--forest);
+                     font-family: 'Helvetica Neue', Arial, sans-serif; text-decoration: none;
+                     border-bottom: 1px solid rgba(45,80,22,0.25); margin-bottom: 14px;
+                     transition: border-color 0.2s; }
+        .stay-link:hover { border-color: var(--forest); }
+        .stay-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+        .stay-tag { background: #eef7ee; color: var(--forest); border-radius: 9px;
+                    padding: 3px 11px; font-size: 11px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        /* ─── FOOD ─── */
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .food-card {
+            background: white; border-radius: 14px; overflow: hidden;
+            box-shadow: 0 3px 20px rgba(0,0,0,0.07);
+            transition: transform 0.2s;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .food-card:hover { transform: translateY(-3px); }
+
+        .food-img { width: 100%; height: 140px; object-fit: cover;
+                    display: block; background: #e8e4dc; }
+
+        .food-body { padding: 18px 20px 20px; }
+
+        .food-cat { font-size: 9.5px; color: var(--warm); letter-spacing: 3px;
+                    text-transform: uppercase; margin-bottom: 6px;
+                    font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .food-name { font-size: 16px; font-weight: 600; color: var(--dark); margin-bottom: 3px; }
+        .food-loc { font-size: 10px; color: #ccc; letter-spacing: 1.5px; text-transform: uppercase;
+                    margin-bottom: 10px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .food-text { font-size: 13px; line-height: 1.65; color: #666;
+                     font-family: 'Helvetica Neue', Arial, sans-serif; margin-bottom: 12px; }
+        .food-link { display: inline-block; font-size: 11px; color: var(--forest);
+                     font-family: 'Helvetica Neue', Arial, sans-serif; text-decoration: none;
+                     border-bottom: 1px solid rgba(45,80,22,0.25);
+                     transition: border-color 0.2s; }
+        .food-link:hover { border-color: var(--forest); }
+
+        /* ─── TIPS ─── */
+        .tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+        .tip-card { background: white; border-radius: 13px; padding: 24px;
+                    box-shadow: 0 3px 16px rgba(0,0,0,0.06); }
+        .tip-icon  { font-size: 24px; margin-bottom: 12px; }
+        .tip-title { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 8px;
+                     font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .tip-text  { font-size: 12.5px; color: #888; line-height: 1.62;
+                     font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        /* ─── BEYOND ─── */
+        .beyond-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+
+        .beyond-card {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 20px;
+        }
+        .beyond-dist { font-size: 9.5px; color: #7aaa7a; font-weight: 700;
+                       text-transform: uppercase; letter-spacing: 2px; margin-bottom: 7px;
+                       font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .beyond-card h4 { font-size: 14px; color: rgba(255,255,255,0.8); margin-bottom: 7px;
+                          font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .beyond-card p  { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6;
+                          font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+        /* ─── FOOTER ─── */
+        footer {
+            background: #0d150d; color: rgba(255,255,255,0.32);
+            text-align: center; padding: 48px 40px;
+            font-size: 13px; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.9;
+        }
+        footer strong { color: rgba(255,255,255,0.6); }
+
+        /* ─── LEAFLET POPUP ─── */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px !important;
+            box-shadow: 0 10px 36px rgba(0,0,0,0.18) !important;
+            padding: 0 !important; overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            min-width: 230px;
+        }
+        .leaflet-popup-content { margin: 0 !important; }
+        .leaflet-popup-tip { background: white !important; }
+
+        .popup-img { width: 100%; height: 116px; object-fit: cover; display: block; background: #ddd; }
+        .popup-inner { padding: 13px 14px 15px; }
+        .popup-type  { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: #ccc; margin-bottom: 4px; }
+        .popup-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; line-height: 1.3; }
+        .popup-text  { font-size: 11.5px; color: #888; line-height: 1.5; margin-bottom: 8px; }
+        .popup-link  { display: inline-block; font-size: 10.5px; color: var(--forest); text-decoration: none;
+                       border-bottom: 1px solid rgba(45,80,22,0.2); }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 38px; letter-spacing: -1px; }
+            .section { padding: 48px 20px; }
+            .events-section, .map-section { padding: 44px 20px; }
+            .days { grid-template-columns: 1fr; }
+            .section-title { font-size: 28px; }
+            #map { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════ HERO -->
+<div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">Tyrol, Austria · Mój prywatny przewodnik</div>
+        <h1>Moje ulubione<br><em>miejsca w Tyrolu</em></h1>
+        <p class="hero-personal">
+            Ten przewodnik zrobiłem specjalnie dla Ciebie — na postój w drodze z Hiszpanii do Polski.
+            Mieszkałem tu kilka lat i dla nas to drugi dom. 
+            Mam nadzieję, że Austria Cię mile zaskoczy.
+        </p>
+        <div class="hero-pills">
+            <span class="pill">2 dni</span>
+            <span class="pill">Kufstein i Achensee</span>
+            <span class="pill">Widoki, nie tłumy</span>
+            <span class="pill">Bez utartego szlaku</span>
+        </div>
+    </div>
+    <div class="hero-scroll">↓ przewiń</div>
+</div>
+
+<!-- ══════════════════ NAV -->
+<nav class="nav">
+    <a href="#experiences">Miejsca</a>
+    <a href="#map-sec">Mapa</a>
+    <a href="#itinerary">Plan 2 dni</a>
+    <a href="#stays">Noclegi</a>
+    <a href="#food">Jedzenie</a>
+    <a href="#events" class="event-link">✦ Wydarzenia 3–7 lip</a>
+    <a href="#beyond">Dalej</a>
+    <a href="#tips">Wskazówki</a>
+</nav>
+
+<!-- ══════════════════ EXPERIENCES -->
+<div class="wrap-cream" id="experiences">
+    <div class="section">
+        <div class="eyebrow">Co warto zobaczyć</div>
+        <div class="section-title">Miejsca, które znam i polecam</div>
+        <p class="section-lead">Żadnych atrakcji dla turystów. Same miejsca, do których sam wracam.</p>
+
+        <div class="cards-grid">
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/Achensee.png" alt="Achensee" onerror="this.style.background='#c8dce8'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Achensee</div>
+                            <div class="xcard-sub">Największe jezioro Tyrolu · Dzień 1</div>
+                        </div>
+                    </div>
+                    <a href="https://www.achensee.com/en/" target="_blank" class="xcard-link">achensee.com ↗</a>
+                    <div class="xcard-text">Największe jezioro Tyrolu — góry wchodzą prosto do wody, skala robi wrażenie. Chłodniejsze niż mniejsze jeziorka, za to idealne do kajakarstwa (niestety trzeba byc czlonkiem klubu) lub spokojnej przejazdzki stateczkiem. Rankiem często jest mgła nad taflą wody.</div>
+                    <div class="tags">
+                        <span class="tag">Widoki</span>
+                        <span class="tag">Kajak, SUP</span>
+                        <span class="tag">Rejs statkiem</span>
+                        <span class="tag">Szlak brzegowy</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/rofan-lift.jpeg" alt="Wyciąg Rofan" onerror="this.style.background='#c8d8c8'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Wyciąg Rofan i Dalfazer Wasserfall</div>
+                            <div class="xcard-sub">Kolej linowa · Maurach · Dzień 1</div>
+                        </div>
+                    </div>
+                    <a href="https://www.rofanseilbahn.at/" target="_blank" class="xcard-link">rofanseilbahn.at ↗</a>
+                    <div class="xcard-text">Kolejka z Maurach (przy Achensee) wjeżdża na 1834 m do Erfurter Hütte. Stamtąd prowadzi szlak grzbietowy z widokiem na jezioro — i zejście obok wodospadu Dalfazer Wasserfall. Jeden z lepszych widoków w całym Tyrolu.</div>
+                    <div class="tags">
+                        <span class="tag">Kolejka</span>
+                        <span class="tag">Widok na jezioro</span>
+                        <span class="tag">Wodospad</span>
+                        <span class="tag">2–3h pętla</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/Wolfsklamm.png" alt="Wolfsklamm" onerror="this.style.background='linear-gradient(135deg,#1a1030,#2a3040)'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Wolfsklamm</div>
+                            <div class="xcard-sub">Wąwóz · Stans · Alternatywa Dzień 1</div>
+                        </div>
+                    </div>
+                    <a href="https://www.wolfsklamm.tirol/" target="_blank" class="xcard-link">wolfsklamm.tirol ↗</a>
+                    <div class="xcard-text">Dramatyczny wąwóz z drewnianymi kładkami przybitymi do skalnych ścian nad rwącą rzeką. Na końcu — klasztor St. Georgenberg zawieszony na klifie. Ciemno, chłodno, robi wrażenie. Dobra opcja na upał.</div>
+                    <div class="tags">
+                        <span class="tag">Wąwóz</span>
+                        <span class="tag">Klasztor</span>
+                        <span class="tag">~1.5h</span>
+                        <span class="tag">Czynny maj–paź</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/tratzberg.png" alt="Zamek Tratzberg" onerror="this.style.background='#d8d0c0'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Zamek Tratzberg</div>
+                            <div class="xcard-sub">Zamek Renesansowy · Jenbach · Alternatywa Dzień 1</div>
+                        </div>
+                    </div>
+                    <a href="https://www.schloss-tratzberg.at/" target="_blank" class="xcard-link">schloss-tratzberg.at ↗</a>
+                    <div class="xcard-text">Zamek renesansowy nad doliną Innu, który wygląda jakby czas się tu zatrzymał — ozdobne malowidła, habsburskie genealogie na całych ścianach, komnaty niezmienione od XVI wieku. Tylko wycieczki z przewodnikiem, co sprawia, że jest bardziej intymnie. W parze z Wolfsklamm to dobry plan na cały dzień.</div>
+                    <div class="tags">
+                        <span class="tag">Renesans</span>
+                        <span class="tag">Habsburgowie</span>
+                        <span class="tag">Z przewodnikiem</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/kala-alm.png" alt="Kala Alm" onerror="this.style.background='#c8d8c0'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Kala Alm i szczyt Pendling</div>
+                            <div class="xcard-sub">Szlak górski · Okolice Thiersee · Dzień 2</div>
+                        </div>
+                    </div>
+                    <a href="https://www.kala-alm.at/" target="_blank" class="xcard-link">kala-alm.at ↗</a>
+                    <div class="xcard-text">Start spod Gasthof Schneeberg — leśna ścieżka, 1.5h podejście do schroniska Kala Alm (1426 m). Potem jeszcze 30 minut na Pendling (1563 m) — jeden z lepszych panoramicznych punktów widokowych w okolicach Kufstein: dolina Innu, Kaisergebirge, Bawaria.</div>
+                    <div class="tags">
+                        <span class="tag">1.5h do schroniska</span>
+                        <span class="tag">+30 min na szczyt</span>
+                        <span class="tag">Panorama</span>
+                        <span class="tag">Możliwy zachód słońca</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/Thiersee.jpeg" alt="Thiersee" onerror="this.style.background='#c0d4dc'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Thiersee</div>
+                            <div class="xcard-sub">Jezioro · 10 min od Kufstein · Dzień 2</div>
+                        </div>
+                    </div>
+                    <div class="xcard-text">Turkusowe, ciepłe. Mała oplata (zbiera gosc na rowerze ;-) Polecam wynająć SUP lub rower wodny i popłynąć na środek — odbicia gór w wodzie są rewelacyjne. Przyjeżdżają tu głównie miejscowi. Najlepiej rano lub wieczorem — w południe robi się tłoczno.</div>
+                    <div class="tags">
+                        <span class="tag">Kąpiel</span>
+                        <span class="tag">SUP lub rower wodny</span>
+                        <span class="tag">Rano lub wieczór</span>
+                        <span class="tag">Lokalni</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/thiersee2.jpeg" alt="Hechtsee" onerror="this.style.background='linear-gradient(135deg,#1a2a1a,#2a3a2a)'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Hechtsee</div>
+                            <div class="xcard-sub">Dzikie pływanie · Przy Kufstein · Dzień 2</div>
+                        </div>
+                    </div>
+                    <div class="xcard-text">Bardziej dzikie i spokojniejsze niż Thiersee. Prawy brzeg ma leśną ścieżkę, gdzie można znaleźć ukryte miejsca między drzewami tuż przy wodzie. Rano jest tu wyjątkowo. Spacer wokol jeziora lub z opcja wejscia na Thierberg Kapelle wedlug oznaczen trasy (tam sa poziomki).</div>
+                    <div class="tags">
+                        <span class="tag">Dzikie pływanie</span>
+                        <span class="tag">Las</span>
+                        <span class="tag">Spokojnie</span>
+                        <span class="tag">Rano lub wieczór</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/kaiser-lift.jpeg" alt="Kaiser Lift" onerror="this.style.background='#d0c8b8'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Kaiser Lift — śniadanie na górze</div>
+                            <div class="xcard-sub">Z Kufstein w górę · Panorama · Poranny wypad</div>
+                        </div>
+                    </div>
+                    <a href="https://www.festung.kufstein.at/" target="_blank" class="xcard-link">festung.kufstein.at ↗</a>
+                    <div class="xcard-text">Stara jednoosobowa kolejka linowa obok centrum Kufstein — każde krzeselko jedzie samotnie, nogi dyndają nad lasem. Na górze: alpaki, kilka szlaków i panorama doliny. </div>
+                    <div class="tags">
+                        <span class="tag">Jednoosobowa kolejka</span>
+                        <span class="tag">Alpaki</span>
+                        <span class="tag">Twierdza</span>
+                        <span class="tag">Opcja poranna</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xcard">
+                <img class="xcard-img" src="photos/Rattenberg.png" alt="Rattenberg" onerror="this.style.background='#d8c8a8'">
+                <div class="xcard-body">
+                    <div class="xcard-meta">
+                        <div>
+                            <div class="xcard-name">Rattenberg</div>
+                            <div class="xcard-sub">Najmniejsze miasto Austrii · Nocleg Noc 1</div>
+                        </div>
+                    </div>
+                    <a href="https://www.rattenberg.at/" target="_blank" class="xcard-link">rattenberg.at ↗</a>
+                    <div class="xcard-text">400 mieszkańców, jedna główna ulica, zachowana średniowieczna zabudowa. Słynie z dmuchanego kryształowego szkła — można oglądać rzemieślników przy pracy. Ruiny zamku powyżej, Inn tuż obok. Dobra baza na Noc 1 — klimatyczne, nieturystyczne, spokojne.</div>
+                    <div class="tags">
+                        <span class="tag">Średniowieczne miasto</span>
+                        <span class="tag">Szklane warsztaty</span>
+                        <span class="tag">Ruiny zamku</span>
+                        <span class="tag">Baza Noc 1</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ MAP -->
+<div class="wrap-dark map-section" id="map-sec">
+    <div class="map-inner">
+        <div class="map-header">
+            <div class="eyebrow">Mapa interaktywna</div>
+            <div class="section-title">Rekomendowane miejsca zaznaczone na mapie</div>
+            <p>Kliknij marker, żeby zobaczyć opis miejsca i link do strony.</p>
+        </div>
+        <div id="map"></div>
+        <div class="map-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#3a8fa4"></div>Jeziora</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3a8a3a"></div>Góry i szlaki</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c8903a"></div>Miasta</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>Wąwozy i zamki</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>Jedzenie i picie</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ ITINERARY -->
+<div class="wrap-white" id="itinerary">
+    <div class="section">
+        <div class="eyebrow">Propozycja planu</div>
+        <div class="section-title">Dwa dni w Tyrolu</div>
+        <p class="section-lead">Dzień 1 to Achensee i góry nad nim. Dzień 2 — szlak górski, ukryte jeziorka i Kufstein. Każdy dzień ma też alternatywną wersję.</p>
+
+        <div class="days">
+
+            <div class="day-card">
+                <div class="day-label">Dzień Pierwszy · Okolice Achensee</div>
+                <div class="day-title">Duże jezioro i góry nad nim</div>
+
+                <div class="step">
+                    <div class="step-time">Wieczór</div>
+                    <div>
+                        <h4>Nocleg w Rattenberg (spokojnie) lub w okolicy jeziora Achensee np. w Pertisau (premium)</h4>
+                        <p></p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-time">Rano</div>
+                    <div>
+                        <h4>Wyciąg Rofan — Maurach</h4>
+                        <p>Wjazd kolejką z Maurach na Erfurter Hütte (1834 m). Najlepiej wyjść rano — bez tłumów i z dobrym światłem. Jezioro wygląda już nie z tej ziemi. → <a href="https://www.rofanseilbahn.at/" target="_blank">rofanseilbahn.at</a></p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Szlak</div>
+                    <div>
+                        <h4>Grzbiet → Dalfazer Wasserfall</h4>
+                        <p>Szlak grzbietowy z widokiem na Achensee, zejście przy wodospadzie Dalfazer Wasserfall. Około 2–3h. Weź wodę i cienką bluzę — wyżej wieje.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Południe</div>
+                    <div>
+                        <h4>Achensee — łódź lub spacer brzegiem</h4>
+                        <p>Rejs statkiem przez jezioro albo wypożyczenie kajaka przy Pertisau. Można też po prostu usiąść na tarasie kafejki i patrzeć jak światło zmienia się na górach. → <a href="https://www.achensee.com/en/" target="_blank">achensee.com</a></p>
+                    </div>
+                </div>
+
+                <div class="alt-box">
+                    <h5>Alternatywny Dzień 1</h5>
+                    <p>Jeśli wolisz coś innego niż góry — <a href="https://www.wolfsklamm.tirol/" target="_blank">Wolfsklamm</a> (dramatyczny wąwóz, ~1.5h) plus <a href="https://www.schloss-tratzberg.at/" target="_blank">Zamek Tratzberg</a> (renesansowe wnętrza, ~1h z przewodnikiem) są blisko siebie koło Stans i razem robią dobry plan na pełny dzień.</p>
+                </div>
+            </div>
+
+            <div class="day-card">Widoki
+                <div class="day-label">Dzień Drugi · Okolice Kufstein</div>
+                <div class="day-title">Szlak górski, ukryte jeziorka, stare miasto</div>
+
+                <div class="step">
+                    <div class="step-time">Opcja: rano</div>
+                    <div>
+                        <h4>Kaiser Lift — Kufstein</h4>
+                        <p>Śniadanie na górze z widokiem — stara jednoosobowa kolejka na górę nad Kufstein. Widok na dolinę Innu. Śniadanie z widokiem w Weinbergerhouse, a obok alpaki. ~1h tam i z powrotem. → <a href="https://www.festung.kufstein.at/" target="_blank">festung.kufstein.at</a></p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Popołudnie</div>
+                    <div>
+                        <h4>Podejście na Kala Alm (1.5h) → Pendling opcjonalnie</h4>
+                        <p>Leśna ścieżka, solidne podejście, czesto krowy na drodze (na polanach przy szczycie). Schronisko Kala Alm na 1426 m. Jeśli nogi dają radę — jeszcze 30 minut na Pendling (1563 m) i jedna z lepszych panoram w całej okolicy. Zaplanuj wyjście tak, żeby trafić na złotą godzinę. → <a href="https://www.kala-alm.at/" target="_blank">kala-alm.at</a></p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Południe</div>
+                    <div>
+                        <h4>Obiad — Gasthof Schneeberg</h4>
+                        <p>Jeśli nie zjadłaś na szlaku na Kala Alm - to super opcja. Restauracja wygląda niepozornie — nie daj się zwieść. Lokalne tyryjskie jedzenie, naprawdę dobre. → <a href="https://www.gasthof-schneeberg.at/" target="_blank">gasthof-schneeberg.at</a></p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Późne popołudnie</div>
+                    <div>
+                        <h4>Thiersee lub Hechtsee — kąpiel po trekkingu</h4>
+                        <p>Po zejściu — odpoczynek na Thiersee albo Hechtsee. Woda ciepła, tłumów już nie ma, światło jest jeszcze piękne (zwłaszcza Hechtsee, nad Thiersee moze juz byc cien rzucany przez gory).</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-time">Wieczór</div>
+                    <div>
+                        <h4>Spacer i bar w Kufstein, a kolacja w Schwoich </h4>
+                        <p> Kufstein wieczorem to pięknie oswietlona twierdza i koniecznie bar Stollen1930. Jedzenie jest "średnie" w samym miescie, warto pojechac 10min do Schwoich - tam polecam Bierol lub Steinis.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ STAYS -->
+<div class="wrap-cream" id="stays">
+    <div class="section">
+        <div class="eyebrow">Gdzie spać</div>
+        <div class="section-title">Noclegi z charakterem</div>
+        <p class="section-lead">Sama zawsze nocowałam u siebie lub rodzinki, więc traktuj to jako wskazówki, nie osobiste rekomendacje.</p>
+
+        <div class="stays-grid">
+
+            <div class="stay-card">
+                <div class="stay-stripe gold"></div>
+                <div class="stay-body">
+                    <div class="stay-night">Noc Pierwsza · Polecane</div>
+                    <div class="stay-name">Rattenberg — Nocleg w średniowiecznym mieście (najmniejsze miasto Austrii ;-)</div>
+                    <div class="stay-location">Rattenberg · Rzeka Inn</div>
+                    <div class="stay-desc">Małe hotele i pensjonaty w zabytkowych kamienicach wzdłuż jedynej głównej ulicy. Bardzo klimatyczne, wcale nie turystyczne. Warsztaty ze szkłem w odległości spaceru.</div>
+                    <a href="https://www.rattenberg.at/" target="_blank" class="stay-link">rattenberg.at ↗</a>
+                    <div class="stay-tags">
+                        <span class="stay-tag">Zabytkowy budynek</span>
+                        <span class="stay-tag">Wszystko na piechotę</span>
+                        <span class="stay-tag">Nieturystyczny klimat</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stay-card">
+                <div class="stay-stripe plum"></div>
+                <div class="stay-body">
+                    <div class="stay-night">Noc Pierwsza · Opcja Premium</div>
+                    <div class="stay-name">Hotel der Wiesenhof</div>
+                    <div class="stay-location">Pertisau · Achensee</div>
+                    <div class="stay-desc">Jeśli chcesz obudzić się nad samym jeziorem — Pertisau ma hotele spa z pokojami wychodzącymi wprost na wodę. Poranna mgła nad Achensee z okna hotelowego moze być magiczna. Na pewno drożej, ale taniej niz w Szwajcarii, a jakosciowo top.</div>
+                    <a href="https://www.wiesenhof.at/en" target="_blank" class="stay-link">wiesenhof.at ↗</a>
+                    <div class="stay-tags">
+                        <span class="stay-tag">Widok na jezioro</span>
+                        <span class="stay-tag">Spa</span>
+                        <span class="stay-tag">Premium</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stay-card">
+                <div class="stay-stripe blue"></div>
+                <div class="stay-body">
+                    <div class="stay-night">Noc Druga</div>
+                    <div class="stay-name">Kufstein — Stare Miasto</div>
+                    <div class="stay-location">Kufstein · Nad Innem</div>
+                    <div class="stay-desc">Kilka rodzinnych Gasthofów w starówce z pokojami z widokiem na twierdzę.</div>
+                    <a href="https://www.kufstein.at/" target="_blank" class="stay-link">kufstein.at ↗</a>
+                    <div class="stay-tags">
+                        <span class="stay-tag">Widok na twierdzę</span>
+                        <span class="stay-tag">Spacer po starówce</span>
+                        <span class="stay-tag">Promenada nad Innem</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stay-card">
+                <div class="stay-stripe"></div>
+                <div class="stay-body">
+                    <div class="stay-night">Noc Druga · Alternatywa</div>
+                    <div class="stay-name">Pensjonat / Bauernhof — Dolina Thiersee</div>
+                    <div class="stay-location">Thiersee / Hinterthiersee</div>
+                    <div class="stay-desc">Kilka pracujących gospodarstw w dolinie Thiersee wynajmuje pokoje z widokiem na góry i śniadaniem domowej roboty. Bardzo wiejsko.</div>
+                    <div class="stay-tags">
+                        <span class="stay-tag">Gospodarstwo</span>
+                        <span class="stay-tag">Domowe śniadanie</span>
+                        <span class="stay-tag">Przy szlaku</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ FOOD -->
+<div class="wrap-white" id="food">
+    <div class="section">
+        <div class="eyebrow">Jedzenie i picie</div>
+        <div class="section-title">Gdzie warto usiąść</div>
+        <p class="section-lead">Kilka sprawdzonych miejsc z rewelacyjna kuchnia lokalna i wyjatkowe bary.</p>
+
+        <div class="food-grid">
+
+            <div class="food-card">
+                <img class="food-img" src="photos/stollen.png" alt="Stollen 1930" onerror="this.style.background='linear-gradient(135deg,#0d0d1e,#1a1230)'">
+                <div class="food-body">
+                    <div class="food-cat">Bar · Kufstein</div>
+                    <div class="food-name">Stollen 1930</div>
+                    <div class="food-loc">Römerhofgasse 4–5 · Kufstein</div>
+                    <div class="food-text">Największy bar ginowy na świecie — ponad 1930 rodzajów ginu w tunelach wydrążonych w skale pod twierdzą. Sam bar jest spektakularny nawet jeśli nie pijasz ginu. Wchodzi się przez Auracher Löchl, jeden z najstarszych lokali w Kufstein. Jedyny lokal w Kufstein warty polecenia.</div>
+                    <a href="https://www.auracher-loechl.at/en/bars/stollen-1930/" target="_blank" class="food-link">auracher-loechl.at ↗</a>
+                </div>
+            </div>
+
+            <div class="food-card">
+                <img class="food-img" src="photos/steinis.png" alt="Steinis Seelounge" onerror="this.style.background='#c8dce8'">
+                <div class="food-body">
+                    <div class="food-cat">Restauracja · Schwoich</div>
+                    <div class="food-name">Steinis Seelounge</div>
+                    <div class="food-loc">Sonnendorf 1 · 6334 Schwoich</div>
+                    <div class="food-text">Niepozorna restauracja z widokiem na staw w Schwoich — wiosce dosłownie rzut kamieniem od Kufstein. Dobre jedzenie ciąga ludzi nawet z Monachium. Świetna opcja na kolację albo późny obiad w dniu 2.</div>
+                    <a href="https://steinis-seelounge.at/" target="_blank" class="food-link">steinis-seelounge.at ↗</a>
+                </div>
+            </div>
+
+            <div class="food-card">
+                <img class="food-img" src="photos/bierol.png" alt="Bierol Biergarten" onerror="this.style.background='#d8e8c8'">
+                <div class="food-body">
+                    <div class="food-cat">Browar rzemieślniczy · Schwoich</div>
+                    <div class="food-name">Bierol Biergarten</div>
+                    <div class="food-loc">Sonnendorf 27 · 6334 Schwoich</div>
+                    <div class="food-text">Fantastyczne jedzenie - nowoczesna kuchnia tyrolska. Ale główny temat to browar kraft z własnym ogrodem piwnym w tej samej wsi co Steinis. Bierol robi bardzo dobre piwa rzemieślnicze — IPA, lager, sezony. Warto spróbować nawet jak nie przepadasz za piwem - tu smakuje najlepiej! Ogród jest klimatyczny i spokojny.</div>
+                    <a href="https://bierol.at/pages/biergarten" target="_blank" class="food-link">bierol.at ↗</a>
+                </div>
+            </div>
+
+            <div class="food-card">
+                <img class="food-img" src="photos/kaiser-mountains.jpeg" alt="Gasthof Schneeberg" onerror="this.style.background='linear-gradient(135deg,#2a3a1a,#1a2a10)'">
+                <div class="food-body">
+                    <div class="food-cat">Gasthof · Thiersee</div>
+                    <div class="food-name">Gasthof Schneeberg</div>
+                    <div class="food-loc">Schneeberg 45 · 6335 Thiersee</div>
+                    <div class="food-text">Parking przy szlaku na Kala Alm. Z zewnątrz nic specjalnego — w środku świetna kuchnia tyryjska. Tiroler Gröstl, Käsespätzle, zeberka (!), gulasz. Idealne przed lub po podejściu. Jeden z tych lokali, które odkrywają tylko ci, którzy tu mieszkają.</div>
+                    <a href="https://www.gasthof-schneeberg.at/" target="_blank" class="food-link">gasthof-schneeberg.at ↗</a>
+                </div>
+            </div>
+
+            <div class="food-card">
+                <img class="food-img" src="photos/kala-alm.png" alt="Kala Alm" onerror="this.style.background='#c8d8c0'">
+                <div class="food-body">
+                    <div class="food-cat">Schronisko górskie · 1426 m</div>
+                    <div class="food-name">Kala Alm</div>
+                    <div class="food-loc">Schneeberg 50a · 6335 Thiersee</div>
+                    <div class="food-text">Piękne typowo tyrolskie schronisko na polanie — drewniane ławy, cowbells w tle, zimny Radler po wejściu. Koniecznie tyrolska specjalność Kaiserschmarl (!), ale tez Käsespätzle, domowy Strudel. To co smakuje tu lepiej niż gdziekolwiek indziej, to głównie dlatego, że się napracowałeś żeby tu dojść.</div>
+                    <a href="https://www.kala-alm.at/" target="_blank" class="food-link">kala-alm.at ↗</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ EVENTS -->
+<div class="wrap-event events-section" id="events">
+    <div class="events-inner">
+        <div class="events-header">
+            <div class="eyebrow">Co sie dzieje w najblizszych dniach</div>
+            <div class="section-title">Wydarzenia · 3–7 lipca 2026</div>
+            <p>Kufstein, Innsbruck i Salzburg — w pierwszym tygodniu lipca 2026 dzieje się więcej niż zwykle. Poniżej to, co warto wziąć pod uwagę planując wieczory.</p>
+        </div>
+
+        <div class="events-grid">
+
+            <div class="event-card star">
+                <div class="event-date">7 lipca · 20:00</div>
+                <div class="event-name">Wolfgang Ambros — koncert na żywo</div>
+                <div class="event-venue">Twierdza Kufstein · Festungsneuhof</div>
+                <div class="event-desc">Austryjacki "Kazik Staszewski", jeden z ich legendarnych muzyków gra w dziedzińcu twierdzy. Koncert plenerowy w wyjątkowej scenerii — kamienny mur za sceną, dolina Innu poniżej. Bilety od €76.</div>
+                <div class="event-footer">
+                    <span class="event-badge">✓ 7 lipca 2026</span>
+                    <a href="https://www.festung.kufstein.at/de/wolfgang-ambros-band.html" target="_blank" class="event-link-btn">Bilety →</a>
+                </div>
+            </div>
+
+            <div class="event-card">
+                <div class="event-date">3–7 lip · Codziennie</div>
+                <div class="event-name">Jedermann — Teatr pod gołym niebem</div>
+                <div class="event-venue">Festungsneuhof · Kufstein</div>
+                <div class="event-desc">Plenerowa inscenizacja „Jedermanna" — spektakl w zadaszonym drewnianym amfiteatrze wybudowanym w samej twierdzy. Jeden z bardziej niezwykłych teatralnych adresów w Austrii. Niestety po niemiecku. </div>
+                <div class="event-footer">
+                    <span class="event-badge">✓ Lipiec 2026</span>
+                    <a href="https://www.stadttheater-kufstein.at/jedermann-2026/" target="_blank" class="event-link-btn">Więcej info →</a>
+                </div>
+            </div>
+
+            <div class="event-card">
+                <div class="event-date">Codziennie · 12:00 i 18:00</div>
+                <div class="event-name">Heldenorgel — Największe organy plenerowe świata</div>
+                <div class="event-venue">Twierdza Kufstein</div>
+                <div class="event-desc">Organy z 1931 roku z 4948 piszczałkami grają codziennie w południe — dźwięk słychać w całym mieście. Możliwe wejście z biletem do twierdzy. W lipcu i sierpniu dodatkowy koncert o 18:00. Warto być w pobliżu gdy zaczyna grać.</div>
+                <div class="event-footer">
+                    <span class="event-badge">Stały program letni</span>
+                    <a href="https://www.festung.kufstein.at/" target="_blank" class="event-link-btn">festung.kufstein.at →</a>
+                </div>
+            </div>
+
+            <div class="event-card star">
+                <div class="event-date">3 lipca · 18:45</div>
+                <div class="event-name">Promenadenkonzerte — koncert inauguracyjny</div>
+                <div class="event-venue">Dziedziniec Hofburga · Innsbruck · ~1h od Kufstein</div>
+                <div class="event-desc">Cykl plenerowych koncertów orkiestrowych w dziedzińcu cesarskiego pałacu Hofburg — klimat XIX-wiecznych promenade concerts rodem z Londynu i Paryża. Inauguracja sezonu 3 lipca o 18:45. Muzyka symfoniczna i dęta, repertuar klasyczny i współczesny, bez bariery językowej. Cykl trwa do 30 lipca — kolejny koncert 12 lipca.</div>
+                <div class="event-footer">
+                    <span class="event-badge">✓ 3 lipca 2026 · Otwarcie</span>
+                    <a href="https://www.promenadenkonzerte.at/" target="_blank" class="event-link-btn">promenadenkonzerte.at →</a>
+                </div>
+            </div>
+
+            <div class="event-card">
+                <div class="event-date">4–5 lipca</div>
+                <div class="event-name">Seefelder Strudelfest</div>
+                <div class="event-venue">Seefeld in Tirol · ~1h od Kufstein</div>
+                <div class="event-desc">Coroczny festiwal szarlotki (Apfelstrudel) w górskim miasteczku Seefeld. Lokalni piekarze, muzyka, stoiska. Jeśli będziesz w okolicach 4–5 lipca i masz chwilę — miły przerywnik, bardzo lokalny klimat.</div>
+                <div class="event-footer">
+                    <span class="event-badge">Coroczna impreza</span>
+                    <a href="https://www.seefeld.com/" target="_blank" class="event-link-btn">seefeld.com →</a>
+                </div>
+            </div>
+
+            <div class="event-card">
+                <div class="event-date">Codziennie · Lipiec 2026</div>
+                <div class="event-name">Festungskonzerte — Mozart i Bach w twierdzy</div>
+                <div class="event-venue">Twierdza Hohensalzburg · Salzburg · ~2h od Kufstein</div>
+                <div class="event-desc">Kameralne koncerty klasyczne w salach twierdzy Hohensalzburg — Mozart, Bach, Haydn. Mała sala, blisko sceny, bardzo intymna atmosfera. Salzburg to oczywiście 2h drogi, ale jeśli masz jeden wieczór z możliwością dojazdu — warto. Koncerty wieczorne przez cały lipiec.</div>
+                <div class="event-footer">
+                    <span class="event-badge">Stały program letni</span>
+                    <a href="https://www.festungskonzerte.at/" target="_blank" class="event-link-btn">festungskonzerte.at →</a>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="events-note">
+            Bilety: <a href="https://www.festung.kufstein.at/de/eventkalender.html" target="_blank">festung.kufstein.at</a> lub bezpośrednio przez <a href="https://www.oeticket.com" target="_blank">oeticket.com</a>.
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ BEYOND -->
+<div class="wrap-dark" id="beyond">
+    <div class="section">
+        <div class="eyebrow" style="color:#7aaa7a">Jeśli zostaniesz dłużej</div>
+        <div class="section-title" style="color:white">W pobliżu</div>
+        <p class="section-lead" style="color:rgba(255,255,255,0.4)">Naturalne rozszerzenia — na trzeci dzień albo jeśli po drodze.</p>
+
+        <div class="beyond-grid">
+            <div class="beyond-card">
+                <div class="beyond-dist">40 min na wschód</div>
+                <h4>Kaisergebirge — Wilder Kaiser</h4>
+                <p>Dramatyczny masyw wapiennych skał na wschód od Kufstein. Wejście z Ellmau lub Scheffau. Szlak Stripsenjochhaus — jeden z lepszych w Tyrolu. Plan na pełny dzień.</p>
+            </div>
+            <div class="beyond-card">
+                <div class="beyond-dist">45 min na południe</div>
+                <h4>Zillertal — Rafting</h4>
+                <p>Spływ rzeką Ziller na białej wodzie latem. Dobry kontrast do spokojnych jezior. Sama dolina też jest ładna — kilka bocznych dolin do pieszych wycieczek.</p>
+            </div>
+            <div class="beyond-card">
+                <div class="beyond-dist">50 min na południe</div>
+                <h4>Innsbruck</h4>
+                <p>Stolica Tyrolu — zwarta, ładna starówka, Goldenes Dachl, Maria-Theresien-Strasse. Wszystko na piechotę. Dobra opcja na deszczowe południe.</p>
+            </div>
+            <div class="beyond-card">
+                <div class="beyond-dist">1h 20 min na południe</div>
+                <h4>Zell am See</h4>
+                <p>Jezioro alpejskie z kolejką na Schmittenhöhe i lodowcem Kaprun w pobliżu. Bardziej kurortowe, ale sceneria jest spektakularna jeśli jedziesz przez południe.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ TIPS -->
+<div class="wrap-cream" id="tips">
+    <div class="section">
+        <div class="eyebrow">Praktyczne info</div>
+        <div class="section-title">Lokalne wskazówki</div>
+        <p class="section-lead">Rzeczy, które się wie po tym jak się tu pomieszkało.</p>
+
+        <div class="tips-grid">
+
+            <div class="tip-card">
+                <div class="tip-icon">🌅</div>
+                <div class="tip-title">Jeziora: rano albo wieczorem</div>
+                <div class="tip-text">Thiersee i Hechtsee są małe. Rano przed 10:00 masz je prawie dla siebie, światło jest dobre i jest cicho. Wieczorem podobnie. W środku dnia, szczególnie w weekendy, jest tłoczno od miejscowych rodzin.</div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">💶</div>
+                <div class="tip-title">Gotówka w schroniskach</div>
+                <div class="tip-text">Kala Alm i większość małych Gasthofów działa tylko na gotówkę. Weź ze sobą €50–80 w mniejszych banknotach. Bankomaty łatwo znaleźć w Kufstein, Rattenberg i przy Achensee przed wyjazdem w góry.</div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">⛈️</div>
+                <div class="tip-title">Burze po południu</div>
+                <div class="tip-text">Tyrolskie góry latem generują burze bardzo szybko, zwłaszcza po południu. Zawsze miej ze sobą cienką kurtkę przeciwdeszczową, nawet przy słońcu.</div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">🌡️</div>
+                <div class="tip-title">Temperatura jezior</div>
+                <div class="tip-text">Thiersee i Hechtsee są ciepłe od czerwca do września — małe jeziora szybko się nagrzewają. Achensee jest wyraźnie chłodniejsze nawet w środku lata — lepsze do kajaków i widoków niż do pływania.</div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">🔦</div>
+                <div class="tip-title">Wolfsklamm — idź rano</div>
+                <div class="tip-text">Wąwóz jest chłodny i ciemny — rano gdy przebija się światło wygląda najlepiej. Popołudniami w sezonie robi się tłoczno. Ostatni wjazd jest godzinę przed zamknięciem. </div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">📍</div>
+                <div class="tip-title">Kufstein — dobre położenie</div>
+                <div class="tip-text">Kufstein leży tuż przy granicy z Niemcami, 10 minut od autostrady A12, 1h od Innsbrucku, 1.5h od Monachium. Jeśli jedziesz z Hiszpanii do Polski — to praktycznie po drodze, bez nadkładania trasy.</div>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-icon">🏔️</div>
+                <div class="tip-title">Na poważniejsze wędrówki</div>
+                <div class="tip-text">Kaisergebirge na wschód od Kufstein to inna liga — wapienne skały, wyraźne podejścia, piękne widoki. Wejdź z Ellmau lub Scheffau. Trasa Stripsenjochhaus to jeden z najlepszych szlaków w całym Tyrolu. Plan na cały dzień z wczesnym startem.</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ FOOTER -->
+<footer>
+    <strong>Mój prywatny przewodnik po Tyrolu</strong><br><br>
+    Zrobiony specjalnie dla Ciebie — na postój w drodze z Hiszpanii do Polski.<br>
+    Mam nadzieję, że Austria zrobi na Tobie wrażenie.<br><br>
+    <span style="color:rgba(255,255,255,0.18)">Zawsze sprawdź godziny otwarcia i warunki na szlakach przed wyruszeniem.</span>
+</footer>
+
+<!-- ══════════════════ MAP SCRIPT -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([47.50, 11.95], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18
+    }).addTo(map);
+
+    const IMGS = {
+        lake:    'photos/Achensee.png',
+        mtn:     'photos/kaiser-mountains.jpeg',
+        hike:    'photos/kala-alm.png',
+        gorge:   'photos/Wolfsklamm.png',
+        castle:  'photos/tratzberg.png',
+        fort:    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Festung_Kufstein_01.JPG/560px-Festung_Kufstein_01.JPG',
+        town:    'photos/Rattenberg.png',
+        food:    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=560&h=220&fit=crop',
+        gin:     'photos/stollen.png',
+        beer:    'photos/bierol.png',
+        steinis: 'photos/steinis.png',
+    };
+
+    function pin(lat, lng, color, title, type, desc, imgKey, url) {
+        const img = imgKey ? `<img src="${IMGS[imgKey]}" class="popup-img" onerror="this.style.display='none'" alt="">` : '';
+        const link = url ? `<a href="${url}" target="_blank" class="popup-link">${url.replace('https://','').replace('www.','').split('/')[0]} ↗</a>` : '';
+        const m = L.circleMarker([lat, lng], {
+            radius: 9, fillColor: color, color: 'white',
+            weight: 2.5, opacity: 1, fillOpacity: 0.9
+        }).addTo(map);
+        m.bindPopup(
+            `${img}<div class="popup-inner"><div class="popup-type">${type}</div><div class="popup-title">${title}</div><div class="popup-text">${desc}</div>${link}</div>`,
+            { maxWidth: 280, minWidth: 240 }
+        );
+        return m;
+    }
+
+    // JEZIORA
+    pin(47.4333, 11.7167, '#3a8fa4', 'Achensee',
+        'Jezioro · Dzień 1',
+        'Największe jezioro Tyrolu. Góry wprost do wody. Kajaki, rejs, szlak brzegowy.',
+        'lake', 'https://www.achensee.com/en/');
+
+    pin(47.582, 12.083, '#3a8fa4', 'Thiersee (Vorderthiersee)',
+        'Jezioro · 10 min od Kufstein · Dzień 2',
+        'Turkusowe, ciepłe, spokojne. Rower wodny, kąpiel. Najlepiej rano lub wieczorem.',
+        'lake', null);
+
+    pin(47.613, 12.178, '#3a8fa4', 'Hechtsee',
+        'Jezioro · Kiefersfelden · Dzień 2',
+        'Dziksze i spokojniejsze niż Thiersee. Prawy brzeg — leśne ścieżki przy wodzie.',
+        'lake', null);
+
+    // GÓRY I SZLAKI
+    pin(47.435, 11.738, '#3a8a3a', 'Rofanseilbahn — Maurach',
+        'Kolejka linowa · Dzień 1',
+        'Wjazd z Maurach na Erfurter Hütte (1834 m). Stamtąd szlak grzbietowy z widokiem na Achensee i zejście przy Dalfazer Wasserfall.',
+        'mtn', 'https://www.rofanseilbahn.at/');
+
+    pin(47.420, 11.712, '#3a8a3a', 'Dalfazer Wasserfall',
+        'Wodospad · Szlak z Rofan',
+        'Wodospad na zejściu ze szlaku grzbietowego. Widok na jezioro przez całą drogę.',
+        'gorge', null);
+
+    pin(47.5804, 12.0936, '#3a8a3a', 'Gasthof Schneeberg — start szlaku',
+        'Start szlaku · Dzień 2',
+        'Parking i start szlaku na Kala Alm i Pendling. Tutaj też doskonała restauracja.',
+        'hike', 'https://www.gasthof-schneeberg.at/');
+
+    pin(47.580, 12.094, '#3a8a3a', 'Kala Alm · 1426 m',
+        'Schronisko górskie · 1.5h od parkingu',
+        'Schronisko na polanie. Käsespätzle, Gulasch, zimny Radler na tarasie.',
+        'hike', 'https://www.kala-alm.at/');
+
+    pin(47.5713, 12.1090, '#3a8a3a', 'Pendling · 1563 m',
+        'Szczyt · +30 min od Kala Alm',
+        'Jeden z najlepszych punktów widokowych w okolicach Kufstein — dolina Innu, Kaisergebirge, Bawaria.',
+        'mtn', null);
+
+    pin(47.583, 12.172, '#3a8a3a', 'Kaiser Lift · Kufstein',
+        'Kolejka · Opcja Dzień 2',
+        'Stara jednoosobowa kolejka nad twierdzą. Alpaki na górze, panorama doliny.',
+        'fort', 'https://www.festung.kufstein.at/');
+
+    // MIASTA
+    pin(47.583, 12.167, '#c8903a', 'Kufstein',
+        'Miasto · Nocleg Noc 2',
+        'Twierdza, promenada nad Innem, starówka. Przy autostradzie A12.',
+        'fort', 'https://www.kufstein.at/');
+
+    pin(47.441, 11.897, '#c8903a', 'Rattenberg',
+        'Najmniejsze miasto Austrii · Nocleg Noc 1',
+        '400 mieszkańców, jedna ulica, szklane warsztaty. Klimatyczne i nieturystyczne.',
+        'town', 'https://www.rattenberg.at/');
+
+    // WĄWOZY I ZAMKI
+    pin(47.3685, 11.7131, '#9b59b6', 'Wolfsklamm',
+        'Wąwóz · Alternatywa Dzień 1',
+        'Dramatyczny wąwóz z drewnianymi kładkami do klasztoru St. Georgenberg. ~1.5h.',
+        'gorge', 'https://www.wolfsklamm.tirol/');
+
+    pin(47.3847, 11.7431, '#9b59b6', 'Zamek Tratzberg',
+        'Zamek Renesansowy · Alternatywa Dzień 1',
+        'Habsburgowie zatrzymani w czasie. Ozdobne wnętrza, tylko z przewodnikiem.',
+        'castle', 'https://www.schloss-tratzberg.at/');
+
+    // JEDZENIE I PICIE
+    pin(47.583, 12.165, '#c0392b', 'Stollen 1930 — Największy bar ginowy świata',
+        'Bar · Kufstein',
+        'Ponad 1930 rodzajów ginu w tunelach pod twierdzą. Wejście przez Auracher Löchl.',
+        'gin', 'https://www.auracher-loechl.at/en/bars/stollen-1930/');
+
+    pin(47.564, 12.152, '#c0392b', 'Steinis Seelounge — Schwoich',
+        'Restauracja · Schwoich',
+        'Restauracja z widokiem na jezioro w Schwoich, niedaleko Kufstein.',
+        'food', 'https://steinis-seelounge.at/');
+
+    pin(47.563, 12.151, '#c0392b', 'Bierol Biergarten — Schwoich',
+        'Browar rzemieślniczy · Schwoich',
+        'Własny browar kraft z ogrodem piwnym. Dobre IPA, lager, sezony.',
+        'beer', 'https://bierol.at/pages/biergarten');
+
+    // NOCLEG PREMIUM
+    pin(47.468, 11.750, '#8e44ad', 'Hotel der Wiesenhof · Pertisau',
+        'Hotel · Achensee',
+        'Spa hotel nad samym jeziorem. Poranna mgła nad Achensee z okna pokoju.',
+        'lake', 'https://www.wiesenhof.at/en');
+</script>
+</body>
+</html>
